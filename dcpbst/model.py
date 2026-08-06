@@ -950,7 +950,7 @@ class DCPBST(nn.Module):
             "final_embedding": final_embedding
         }
 
-    def fit(self,epochs=900, lr=1e-3, w_cls=10.0,w_recon=10.0, w_kl=0.1, w_pro=3.0,w_info=2.0, w_dgi=0.1,w_clu=1.0,diagnose_every_n_epochs=20):
+    def fit(self,epochs=900, lr=1e-3, w_cls=10.0,w_recon=10.0, w_kl=0.1, w_pro=2.0,w_info=1.0, w_dgi=0.1,w_clu=1.0,diagnose_every_n_epochs=20):
         """
         Trains the DCPBST model.
         Args:
