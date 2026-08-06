@@ -42,18 +42,24 @@ hf_hub_download(repo_id="lanyu1/dcpbst-image-pth",
 
 #### Download from Hugging Face (Recommended)
 
-We have hosted preprocessed datasets on Hugging Face for easier access:
+The preprocessed datasets used in this study are publicly hosted on Hugging Face:
 
-**Repository:** [lanyu1/dcpbst-data](https://huggingface.co/datasets/lanyu1/dcpbst-data) (Private)
+**Repository:** [lanyu1/dcpbst-data](https://huggingface.co/datasets/lanyu1/dcpbst-data) (Public)
+**DOI:** [10.57967/hf/9765](https://doi.org/10.57967/hf/9765)
+
+The repository contains the preprocessed data for all five datasets analysed in the paper:
+the twelve human dorsolateral prefrontal cortex (DLPFC) slices (`151507`–`151676`), the human
+breast cancer section (`Human_breast`), the mouse anterior brain section (`Mouse_Brain_Anterior`),
+and the human pancreatic ductal adenocarcinoma section (`PDAC3036911`). Each Visium directory
+provides the gene-expression matrix (`filtered_feature_bc_matrix.h5`), the manual annotations
+(`metadata.tsv`) and the `spatial/` folder with the histology image and coordinates.
+
+No authentication is required.
 
 **Quick Download using Python:**
 ```python
 from huggingface_hub import hf_hub_download
 import os
-
-# You need to login first for private datasets
-# Run: huggingface-cli login
-# Or use: from huggingface_hub import login; login()
 
 # Create data directory
 os.makedirs("data", exist_ok=True)
@@ -91,15 +97,13 @@ hf_hub_download(repo_id="lanyu1/dcpbst-data",
 # Install git-lfs if not already installed
 # Run: git lfs install
 
-# Clone the entire dataset repository (requires authentication)
+# Clone the entire dataset repository (~10.4 GB)
 git clone https://huggingface.co/datasets/lanyu1/dcpbst-data data/
 ```
 
-**Note:** This is a private dataset. You need to:
-1. Have access permission to the dataset
-2. Login to Hugging Face using `huggingface-cli login` or provide your access token
-
 #### Original Data Sources
+
+The unprocessed raw versions of all datasets can be obtained directly from their original sources:
 
 | Dataset                                        | Link                                                         |
 | ---------------------------------------------- | ------------------------------------------------------------ |
@@ -108,6 +112,13 @@ git clone https://huggingface.co/datasets/lanyu1/dcpbst-data data/
 | Human breast cancer                            | https://support.10xgenomics.com/spatial-gene-expression/datasets/1.1.0/V1_Breast_Cancer_Block_A_Section_1 |
 | Human Pancreatic Ductal Adenocarcinoma         | https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE111672 |
 | Mouse hypothalamic preoptic dataset            | http://sdmbench.drai.cn                                      |
+
+### Citation
+
+The source code of this study is archived on Zenodo:
+
+**Code DOI:** [10.5281/zenodo.21669780](https://doi.org/10.5281/zenodo.21669780)
+**Data DOI:** [10.57967/hf/9765](https://doi.org/10.57967/hf/9765)
 
 
 ### Requirements
