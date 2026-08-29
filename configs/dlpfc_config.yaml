@@ -1,0 +1,42 @@
+# DLPFC (10x Visium) - Spatial Domain Identification
+# Used by: dcpbst_DLPFC_151509.ipynb, dcpbst_DLPFC_151671.ipynb
+# Model variant: model_827.py
+
+# Data configuration
+data_path: "data/151509"  # relative to repo root; change to 151671 for section 151671
+label_col: "layer_guess"  # column name in metadata.tsv
+use_img_features: true    # Visium has H&E image features
+
+# Model architecture
+latent_dim: 1024          # VAE latent dimension
+pca_n_components: 1000    # PCA dimensionality for input features
+embed_dim: 512            # Cross-attention embedding dimension
+num_heads: 8              # Number of attention heads
+output_dim: 256           # Final embedding dimension
+
+# Graph construction
+neighbors: 7              # KNN graph neighbors
+gat_dropout: 0.5          # Dropout rate in GCN
+
+# Training hyperparameters
+epochs: 900
+lr: 0.001
+w_cls: 10.0               # Classification loss weight
+w_recon: 10.0             # Reconstruction loss weight
+w_kl: 0.1                 # KL divergence loss weight
+w_pro: 2.0                # Proxy/supervised loss weight
+w_info: 3.0               # InfoNCE contrastive loss weight
+w_dgi: 0.1                # DGI loss weight
+w_clu: 1.0                # Unsupervised clustering loss weight
+diagnose_every_n_epochs: 20
+
+# Clustering
+cluster_method: "mclust"  # mclust (R), kmeans, leiden, louvain
+refine_radius: 50         # Spatial neighbor label smoothing radius
+n_clusters: 7             # Auto-detected from Ground Truth; 7 for 151509, 5 for 151671
+
+# Misc
+seed: 100
+use_ot: false             # Not used in current experiments
+spatial_s_requires_grad: false
+label_col_name: "Ground Truth"  # Column name in adata.obs (after loading)

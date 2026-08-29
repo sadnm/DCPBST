@@ -1,0 +1,43 @@
+# Mouse Hypothalamus (MERFISH)
+# Used by: dcpbst_Mouse_Hypothalamus.ipynb
+# Model variant: model_829_copy.py
+
+# Data configuration
+data_file: "data/mouse_Hypothalamus/MERFISH_0.14_20251020183913_1.h5ad"  # h5ad file path
+data_path: "data/mouse_Hypothalamus"  # directory for construct_interaction
+label_col: "ground_truth"            # label in h5ad obs column
+use_img_features: false              # MERFISH has NO image features; uses spatial coordinates only
+
+# Model architecture (MERFISH-specific)
+latent_dim: 1024
+pca_n_components: 256                # Reduced PCA dimensions
+embed_dim: 512
+num_heads: 8
+output_dim: 256
+
+# Graph construction (MERFISH: fewer neighbors)
+neighbors: 6                         # Reduced from 7
+gat_dropout: 0.5
+
+# Training hyperparameters
+epochs: 900
+lr: 0.001
+w_cls: 10.0
+w_recon: 10.0
+w_kl: 0.1
+w_pro: 2.0
+w_info: 3.0
+w_dgi: 0.1
+w_clu: 1.0
+diagnose_every_n_epochs: 20
+
+# Clustering
+cluster_method: "mclust"
+refine_radius: 50
+n_clusters: null  # Auto-detected from ground_truth
+
+# Misc
+seed: 100
+use_ot: false                       # Not used in current experiments
+spatial_s_requires_grad: false
+label_col_name: "ground_truth"       # MERFISH uses lowercase column name

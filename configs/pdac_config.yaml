@@ -1,0 +1,45 @@
+# PDAC / Pancreatic Cancer (10x Visium + custom HE)
+# Used by: dcpbst_PDAC.ipynb
+# Model variant: model_827_copy.py
+
+# Data configuration
+data_path: "data/PDAC3036911"       # relative to repo root
+label_col: "ground_truth"           # loaded from custom label CSV
+label_csv: "data/PDAC3036911/20210201_PatientA1_label_chinese.csv"
+h5ad_file: "data/PDAC3036911/sorted_GSM3036911.h5ad"
+he_image: "data/PDAC3036911/GSM3036911_PDAC-A-ST1-HE.jpg"
+use_img_features: true              # Visium has H&E image features
+
+# Model architecture (PDAC-specific: smaller dimensions, more attention heads)
+latent_dim: 1024
+pca_n_components: 256                # Reduced from 1000
+embed_dim: 256                      # Reduced from 512
+num_heads: 16                       # Increased from 8
+output_dim: 256
+
+# Graph construction
+neighbors: 7
+gat_dropout: 0.5
+
+# Training hyperparameters (PDAC-specific: different loss weights)
+epochs: 900
+lr: 0.001
+w_cls: 10.0
+w_recon: 10.0
+w_kl: 0.5                           # Increased from 0.1
+w_pro: 3.0                          # Increased from 2.0
+w_info: 3.0
+w_dgi: 0.1
+w_clu: 1.0
+diagnose_every_n_epochs: 30         # Increased from 20
+
+# Clustering
+cluster_method: "mclust"
+refine_radius: 50
+n_clusters: 7  # Auto-detected from Ground Truth
+
+# Misc
+seed: 100
+use_ot: false                       # Not used in current experiments
+spatial_s_requires_grad: true       # PDAC requires spatial gradient tracking
+label_col_name: "Ground Truth"
