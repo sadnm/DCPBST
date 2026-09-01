@@ -70,7 +70,10 @@ git clone https://huggingface.co/datasets/lanyu1/dcpbst-data data/
 
 ---
 
-## Repository Structure
+## Code Information
+
+Repository structure. All model code lives in `dcpbst_package/`; the notebooks and the
+`downstream_analysis/` scripts are thin drivers around it.
 
 ```
 DCPBST/
@@ -174,11 +177,21 @@ The downstream DEG scripts consume only the `*_adata_with_clusters.h5ad` files �
 
 Full pin list: [`docs/requirements_pip.txt`](docs/requirements_pip.txt).
 
-> **Note**: clustering additionally requires **R >= 4.0** with the `mclust` R package installed (called via `rpy2`); all other steps run in pure Python.
+> **Note**: clustering additionally requires **R >= 4.0** with the `mclust` R package installed (called via `rpy2`); all other steps run in pure Python. The reported experiments used **R 4.5.1** with **mclust 6.1.1**, called from Python through **rpy2 3.5.17**.
 
 **Computational environment**. The experiments were run on a server equipped with an Intel (R) Core (TM) i5-14600KF CPU @ 5.3GHz (14Core 6P+8E) processor, 64GB DDR4 RAM (32G*2), and NVIDIA GeForce RTX 4060Ti (16GB) GPU. The operating system used was Ubuntu 20.04 LTS. All experimental code was executed within a Python 3.7 environment.
 
 To verify the stability of our model on different devices, all experiments were additionally re-run and the reproducible code was organized and uploaded on a second server equipped with two Intel(R) Xeon(R) Silver 4210 CPUs @ 2.20GHz (10Core each), 128GB DDR4 RAM (32G*4), 480G SSD + 16T (4T*4) storage, and an NVIDIA GeForce RTX 4090 (24GB) GPU. The operating system was Ubuntu 20.04 LTS, with the same Python 3.7 environment (PyTorch 1.13.1, CUDA 11.7). Consistent training, clustering and downstream-analysis results were obtained on both devices, confirming the stability and reproducibility of our model across hardware platforms.
+
+### Environment provenance
+
+The conda environment used for the recorded runs was named `miso`, so the notebook outputs show
+paths such as `/root/miniconda3/envs/miso/...`. The environment specification was derived from that
+of **MISO** (Coleman et al., 2025), whose published dependency set we adopted in order to obtain a
+comparable Python 3.7 / PyTorch 1.13.1 runtime for spatial multi-modal omics. Only the environment
+specification was reused. DCPBST does not import or depend on the MISO package, and all model code
+is contained in `dcpbst_package/`. The environment file shipped here,
+`docs/environment_dcpbst.yml`, installs the identical package set under the name `dcpbst`.
 
 ---
 
@@ -272,6 +285,9 @@ If you use this code, data, or weights, please cite the manuscript (the BibTeX e
 
 **Archived DOI**:
 - Data: [10.57967/hf/9765](https://doi.org/10.57967/hf/9765)
+
+The Python environment specification used in this work was derived from that of MISO:
+- Coleman, K., Schroeder, A., Loth, M. et al. (2025), *Resolving tissue complexity by multimodal spatial omics modeling with MISO*. **Nature Methods** 22, 530–538 ([10.1038/s41592-024-02574-2](https://doi.org/10.1038/s41592-024-02574-2))
 
 The re-analyzed public datasets originate from:
 - Maynard et al. (2021), *Nature Neuroscience* 24:425–436 — DLPFC 10x Visium sections

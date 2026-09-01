@@ -112,7 +112,6 @@ dependencies:
       - matplotlib==3.5.3
       - matplotlib-inline==0.1.6
       - matplotlib-scalebar==0.8.1
-      - dcpbst==2.4.2
       - mistune==3.0.2
       - multidict==6.0.5
       - natsort==8.4.0
