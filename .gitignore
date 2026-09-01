@@ -16,6 +16,8 @@ outputs/
 *.ckpt
 *.pt
 *.pth.bak
+# Stray metrics CSVs written by notebooks to the repo root (e.g. PDAC-0830.csv)
+/PDAC-*.csv
 
 # ---------- Python ----------
 __pycache__/

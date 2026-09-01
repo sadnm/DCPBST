@@ -28,8 +28,7 @@ loader in the repository — every dataset is self-contained in its notebook):
 
 | File | Used by | Location |
 |------|---------|----------|
-| `model_827.py` | DLPFC (151509, 151671), Mouse AREI (Visium) | `dcpbst_package/model_827.py` |
-| `model_827_copy.py` | BRCA, PDAC (Visium; PDAC passes different hyperparameters + POT) | `dcpbst_package/model_827_copy.py` |
+| `model_827_copy.py` | DLPFC (151509, 151671), BRCA, PDAC, Mouse AREI (Visium; PDAC passes different hyperparameters + POT) | `dcpbst_package/model_827_copy.py` |
 | `model_829_copy.py` | Mouse Hypothalamus (MERFISH, no image features) | `dcpbst_package/model_829_copy.py` |
 
 ```python
@@ -56,7 +55,7 @@ clusters = model.cluster(n_clusters=n_clusters)
 
 **Dataset**: 12 adult human DLPFC (dorsolateral prefrontal cortex) sections, spatial domain identification (cortical layer mapping).  
 **Modality**: 10x Visium (RNA + H&E image features)  
-**Model variant**: `dcpbst_package/model_827.py`  
+**Model variant**: `dcpbst_package/model_827_copy.py`  
 **Notebook**: `notebooks/dcpbst_DLPFC_151509.ipynb` (section 151509), `notebooks/dcpbst_DLPFC_151671.ipynb` (section 151671)
 
 ### 1.1 Example Sections (151509 and 151671)
@@ -353,7 +352,7 @@ label_col_name: "ground_truth"
 
 **Dataset**: Mouse brain anterior region.  
 **Modality**: 10x Visium (RNA + H&E image features)  
-**Model variant**: `dcpbst_package/model_827.py`  
+**Model variant**: `dcpbst_package/model_827_copy.py`  
 **Notebook**: `notebooks/dcpbst_Mouse_AREI.ipynb`
 
 | Property | Value |
@@ -473,7 +472,9 @@ downstream_analysis/deg_results/
 
 GO/KEGG enrichment, volcano plots, bubble plots, and differential heatmaps are rendered through a public bioinformatics visualization platform:
 
-🔗 **Platform URL**: [https://cute-companion-liart.vercel.app](https://cute-companion-liart.vercel.app)
+🔗 **Platform URL**: [https://bioinformatics.com.cn/](https://bioinformatics.com.cn/)
+
+All figures and tables presented in the manuscript were generated using this online platform.
 
 ### 7.1 Web-Platform Inputs (BRCA and PDAC)
 
@@ -602,11 +603,11 @@ reproducible_experiments/
 
 | Dataset | Modality | Model Variant | Key Differences |
 |---------|----------|---------------|-----------------|
-| DLPFC (10x Visium) | RNA + H&E | `model_827.py` | Baseline configuration |
+| DLPFC (10x Visium) | RNA + H&E | `model_827_copy.py` | Baseline configuration |
 | BRCA (10x Visium) | RNA + H&E | `model_827_copy.py` | Same architecture as DLPFC; web export domains 12 vs 14, DEG 12 vs 14 |
 | PDAC (10x Visium) | RNA + H&E | `model_827_copy.py` | `embed_dim=256`, `num_heads=16`, `use_ot=true`, higher `w_kl`/`w_pro` |
 | Mouse Hypothalamus (MERFISH) | RNA + coords | `model_829_copy.py` | `use_img_features=false`, `neighbors=6`, `pca_n_components=256` |
-| Mouse AREI (10x Visium) | RNA + H&E | `model_827.py` | Same as DLPFC |
+| Mouse AREI (10x Visium) | RNA + H&E | `model_827_copy.py` | Same as DLPFC |
 
 ### Architecture Parameters by Dataset
 
@@ -641,12 +642,12 @@ All datasets use `epochs=900`, `lr=0.001`, `seed=100`.
 
 | Notebook | Data Path | Model Variant |
 |----------|-----------|---------------|
-| `notebooks/dcpbst_DLPFC_151509.ipynb` | `data/151509` | `model_827.py` |
-| `notebooks/dcpbst_DLPFC_151671.ipynb` | `data/151671` | `model_827.py` |
+| `notebooks/dcpbst_DLPFC_151509.ipynb` | `data/151509` | `model_827_copy.py` |
+| `notebooks/dcpbst_DLPFC_151671.ipynb` | `data/151671` | `model_827_copy.py` |
 | `notebooks/dcpbst_BRAC.ipynb` (filename kept as-is) | `data/Human_breast` | `model_827_copy.py` |
 | `notebooks/dcpbst_PDAC.ipynb` | `data/PDAC3036911` | `model_827_copy.py` |
 | `notebooks/dcpbst_Mouse_Hypothalamus.ipynb` | `data/mouse_Hypothalamus` | `model_829_copy.py` |
-| `notebooks/dcpbst_Mouse_AREI.ipynb` | `data/Mouse_Brain_Anterior` | `model_827.py` |
+| `notebooks/dcpbst_Mouse_AREI.ipynb` | `data/Mouse_Brain_Anterior` | `model_827_copy.py` |
 
 > Downstream (DEG / GO) tasks are not in the notebooks — they are reproduced
 > by `downstream_analysis/run_brca_deg.py` and

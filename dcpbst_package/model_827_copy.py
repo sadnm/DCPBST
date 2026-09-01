@@ -22,7 +22,6 @@ import scipy
 import torch.nn.functional as F
 from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
 import pandas as pd
-import ot
 import scipy.sparse as sp
 from .preprocess import *
 from torch.nn import MSELoss
@@ -1073,7 +1072,7 @@ class Dcpbst(nn.Module):
             w_kl (float): Weight for KL divergence loss.
             w_info (float): Weight for InfoNCE loss.
             w_dgi (float): Weight for DGI loss.
-            epochs=1000, lr=1e-3, w_recon=10.0, w_kl=1, w_info=5.0, w_dgi=0.1
+            w_clu (float): Weight for clustering loss.
         """
         super().train()
         optimizer = optim.Adam(self.parameters(), lr=lr)
