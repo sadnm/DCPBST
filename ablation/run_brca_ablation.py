@@ -247,6 +247,7 @@ def build_model(method: MethodConfig, scrna: np.ndarray, image_emb: np.ndarray, 
         **method.model_kwargs,
     )
     return model, n_clusters
+
 def mclust_R(adata, num_cluster, modelNames='EEE', used_obsm='emb_pca', random_seed=2024):
     import rpy2.robjects as robjects
     robjects.r.library("mclust")
@@ -259,24 +260,7 @@ def mclust_R(adata, num_cluster, modelNames='EEE', used_obsm='emb_pca', random_s
     mclust_res = np.array(res[-2]).astype('int')
     adata.obs['mclust'] = pd.Categorical(mclust_res)
     return adata
-def refine_label(adata, radius=50, key='label'):
-    import ot
-    n_neigh = radius
-    new_type = []
-    old_type = adata.obs[key].values
-    position = adata.obsm['spatial']
-    distance = ot.dist(position, position, metric='euclidean')
-    n_cell = distance.shape[0]
-    for i in range(n_cell):
-        vec = distance[i, :]
-        index = vec.argsort()
-        neigh_type = []
-        for j in range(1, n_neigh + 1):
-            neigh_type.append(old_type[index[j]])
-        max_type = max(neigh_type, key=neigh_type.count)
-        new_type.append(max_type)
-    new_type = [str(i) for i in list(new_type)]
-    return new_type
+
 def clustering(adata, n_clusters=7, radius=50, key='emb', method='mclust', refinement=False):
     pca = PCA(n_components=20, random_state=2024)
     embedding = pca.fit_transform(adata.obsm[key].copy())

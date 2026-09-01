@@ -2,8 +2,9 @@
 # See README.md §Data & Weights for download instructions.
 
 # ---------- Dataset & weights (download from Hugging Face) ----------
-data/
-checkpoints/
+# Root-anchored, no trailing slash: also matches the `checkpoints` symlink.
+/data
+/checkpoints
 
 # ---------- Results & outputs ----------
 saved_results/

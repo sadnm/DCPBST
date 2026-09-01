@@ -20,6 +20,7 @@ from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score, s
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import ot
 input_dim = 1433 
 hidden1_dim = 32
 hidden2_dim = 16
@@ -275,90 +276,19 @@ def nolabel_clustering_matrix(df, X, labels, sample, methods_):
     return df
 
 
-def mclust_R(adata, num_cluster, modelNames='EEE', used_obsm='emb_pca', random_seed=2024):
-    """\
-    Clustering using the mclust algorithm.
-    The parameters are the same as those in the R package mclust.
-    """
 
-    np.random.seed(random_seed)
+def mclust_R(adata, num_cluster, modelNames='EEE', used_obsm='emb_pca', random_seed=2024):
     import rpy2.robjects as robjects
     robjects.r.library("mclust")
-
     import rpy2.robjects.numpy2ri
     rpy2.robjects.numpy2ri.activate()
     r_random_seed = robjects.r['set.seed']
     r_random_seed(random_seed)
     rmclust = robjects.r['Mclust']
-
     res = rmclust(rpy2.robjects.numpy2ri.numpy2rpy(adata.obsm[used_obsm]), num_cluster, modelNames)
-    print(res)
-    mclust_res = np.array(res[-2])
-
-    adata.obs['mclust'] = mclust_res
-    adata.obs['mclust'] = adata.obs['mclust'].astype('int')
-    adata.obs['mclust'] = adata.obs['mclust'].astype('category')
+    mclust_res = np.array(res[-2]).astype('int')
+    adata.obs['mclust'] = pd.Categorical(mclust_res)
     return adata
-
-
-def clustering(adata, n_clusters=7, radius=50, key='emb', method='mclust', start=0.1, end=3.0, increment=0.01,
-               refinement=False):
-    """\
-    Spatial clustering based the learned representation.
-
-    Parameters
-    ----------
-    adata : anndata
-        AnnData object of scanpy package.
-    n_clusters : int, optional
-        The number of clusters. The default is 7.
-    radius : int, optional
-        The number of neighbors considered during refinement. The default is 50.
-    key : string, optional
-        The key of the learned representation in adata.obsm. The default is 'emb'.
-    method : string, optional
-        The tool for clustering. Supported tools include 'mclust', 'leiden', and 'louvain'. The default is 'mclust'.
-    start : float
-        The start value for searching. The default is 0.1.
-    end : float
-        The end value for searching. The default is 3.0.
-    increment : float
-        The step size to increase. The default is 0.01.
-    refinement : bool, optional
-        Refine the predicted labels or not. The default is False.
-
-    Returns
-    -------
-    None.
-
-    """
-
-    # PCA dimensionality reduction done before clustering
-    pca = PCA(n_components=20, random_state=2024)
-    embedding = pca.fit_transform(adata.obsm[key].copy())
-    adata.obsm['emb_pca'] = embedding
-
-
-    if method == 'mclust':
-        adata = mclust_R(adata, used_obsm='emb_pca', num_cluster=n_clusters)
-        adata.obs['domain'] = adata.obs['mclust']
-    elif method == 'kmeans':
-        kmeans = KMeans(n_clusters=n_clusters).fit(embedding)
-        kmeans_result = [i + 1 for i in kmeans.labels_]
-        adata.obs['domain'] = list(map(lambda x: str(x), kmeans_result))
-    elif method == 'leiden':
-        res = search_res(adata, n_clusters, use_rep='emb_pca', method=method, start=start, end=end, increment=increment)
-        sc.tl.leiden(adata, random_state=0, resolution=res)
-        adata.obs['domain'] = adata.obs['leiden']
-    elif method == 'louvain':
-        res = search_res(adata, n_clusters, use_rep='emb_pca', method=method, start=start, end=end, increment=increment)
-        sc.tl.louvain(adata, random_state=0, resolution=res)
-        adata.obs['domain'] = adata.obs['louvain']
-
-    if refinement:
-        new_type = refine_label(adata, radius, key='domain')
-        adata.obs['domain'] = new_type
-
 
 def refine_label(adata, radius=50, key='label'):
     n_neigh = radius

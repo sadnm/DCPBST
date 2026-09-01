@@ -20,44 +20,35 @@ These parameters are shared across all dataset configurations unless explicitly 
 | Device | `cuda` (fallback `cpu`) | GPU acceleration when available |
 | Optimizer | Adam | For model training |
 
-### Unified Model Interface
+### Model Variant Files
 
-The **unified DCPBST model** (`dcpbst_package/model.py`) accepts a config dictionary/YAML and supports all dataset variants:
+Each notebook imports one model variant from `dcpbst_package/` and passes all
+hyperparameters **directly in code** (there is no configuration file or YAML
+loader in the repository — every dataset is self-contained in its notebook):
+
+| File | Used by | Location |
+|------|---------|----------|
+| `model_827.py` | DLPFC (151509, 151671), Mouse AREI (Visium) | `dcpbst_package/model_827.py` |
+| `model_827_copy.py` | BRCA, PDAC (Visium; PDAC passes different hyperparameters + POT) | `dcpbst_package/model_827_copy.py` |
+| `model_829_copy.py` | Mouse Hypothalamus (MERFISH, no image features) | `dcpbst_package/model_829_copy.py` |
 
 ```python
-from dcpbst_package.model import Dcpbst
+from dcpbst_package.model_827_copy import Dcpbst
 
-# Load config and instantiate
+# Instantiate (hyperparameters passed directly; PDAC overrides them in its notebook)
 model = Dcpbst(
     features=[rna_features, img_features_or_coords],  # modality-specific inputs
     adata=adata,
-    config=config_dict,  # loaded from configs/*.yaml
     device='cuda',
     n_clusters=n_clusters,
 )
 
 # Train
-embedding = model.fit(
-    epochs=900,
-    lr=1e-3,
-)
+embedding = model.fit(epochs=900, lr=1e-3, ...)
 
 # Cluster
 clusters = model.cluster(n_clusters=n_clusters)
 ```
-
-### Legacy Model Files
-
-Legacy model variants are preserved for exact backward compatibility:
-
-| File | Use Case | Location |
-|------|----------|----------|
-| `model_827.py` | DLPFC, BRAC, Mouse AREI (Visium) | `dcpbst_package/model_827.py` |
-| `model_827_copy.py` | PDAC (Visium, different hyperparameters + POT) | `dcpbst_package/model_827_copy.py` |
-| `model_829_copy.py` | Mouse Hypothalamus (MERFISH, no image features) | `dcpbst_package/model_829_copy.py` |
-| *(archived)* | Read-only reference copies | `legacy_models/` |
-
-> **Note**: Legacy files are identical in content to their counterparts in `dcpbst_package/`. New experiments should use the unified model.
 
 ---
 
@@ -65,8 +56,7 @@ Legacy model variants are preserved for exact backward compatibility:
 
 **Dataset**: 12 adult human DLPFC (dorsolateral prefrontal cortex) sections, spatial domain identification (cortical layer mapping).  
 **Modality**: 10x Visium (RNA + H&E image features)  
-**Config file**: `configs/dlpfc_config.yaml`  
-**Legacy model**: `dcpbst_package/model_827.py`  
+**Model variant**: `dcpbst_package/model_827.py`  
 **Notebook**: `notebooks/dcpbst_DLPFC_151509.ipynb` (section 151509), `notebooks/dcpbst_DLPFC_151671.ipynb` (section 151671)
 
 ### 1.1 Example Sections (151509 and 151671)
@@ -109,31 +99,10 @@ Image patch data (pre-computed, optionally pre-loaded):
 - Patches: `data/cut_img_DLPFC/cut_img_{section_id}.npy`
 - ResNet features: `data/cut_img_DLPFC/Img_feat_{section_id}.npy`
 
-### 1.3 DLPFC 12-Section Benchmark
+### DLPFC Hyperparameters
 
-Independent benchmark script: `downstream_analysis/dlpfc_12sections_benchmark.py`
-
-```bash
-# Run all 12 sections
-python downstream_analysis/dlpfc_12sections_benchmark.py \
-  --data_root data \
-  --output_dir ./dlpfc_12_results \
-  --method mclust \
-  --radius 50 \
-  --neighbors 7
-
-# Run a subset of sections
-python downstream_analysis/dlpfc_12sections_benchmark.py \
-  --sections 151507 151508 151673
-```
-
-Outputs:
-- `DLPFC_12sections_per_section_metrics.csv` — per-section ARI/NMI/Purity/Homogeneity/Completeness/V_Measure
-- `DLPFC_12sections_summary_mean_std.csv` — 12-section mean ± std
-
-> **Note**: This benchmark script was derived by extracting the complete pipeline (load → preprocess → image features → DCPBST → clustering → refine → metrics) from the two example notebooks and extending it to loop over all 12 sections. All parameters are aligned with the example notebooks.
-
-### DLPFC Hyperparameters (from `configs/dlpfc_config.yaml`)
+All hyperparameters are passed directly in the notebook (no configuration
+file is read):
 
 ```yaml
 # Model architecture
@@ -172,30 +141,30 @@ label_col_name: "Ground Truth"
 
 ---
 
-## 2. BRAC / Human Breast Cancer (10x Visium)
+## 2. BRCA / Human Breast Cancer (10x Visium)
 
 **Dataset**: Human breast cancer tissue, tumor region identification.  
 **Modality**: 10x Visium (RNA + H&E image features)  
-**Config file**: `configs/brac_config.yaml`  
-**Legacy model**: `dcpbst_package/model_827.py`  
-**Notebook**: `notebooks/dcpbst_BRAC.ipynb`  
-**Downstream notebooks**: `notebooks/dcpbst_BRAC_GO_enrichment_and_violin.ipynb`
+**Model variant**: `dcpbst_package/model_827_copy.py`  
+**Notebook**: `notebooks/dcpbst_BRAC.ipynb` (filename kept as-is)  
+**Downstream script**: `downstream_analysis/run_brca_deg.py` (web-platform export / DEG / heatmap / volcano / GO; shared helpers in `deg_common.py`)
 
 | Property | Value |
 |----------|-------|
 | Data path | `data/Human_breast` |
-| n_clusters | Auto-detected from Ground Truth (`7` domains) |
+| n_clusters | Auto-detected from Ground Truth |
 | label_col | `fine_annot_type` (in `metadata.tsv`) |
 | Patch data | `data/cut_img_BRCA/cut_img_BRCA.npy`, `Img_feat_brca.npy` |
-| DEG contrast groups | Group `8` vs Group `12` (basal-like vs luminal-like tumors, 479 spots) |
-| Pre-rendered figures | `figures/BRAC_downanalysis/` |
-| Website inputs | `downstream_analysis/website_inputs/` |
+| DEG contrast groups | Cluster `12` vs cluster `14` (121 significant DEGs, Wilcoxon, \|log2FC\| ≥ 2, P < 0.05) |
+| Web-platform export | Domains `12` vs `14` (626 spots: 431 + 195), generated by `run_brca_deg.py` into `downstream_analysis/deg_results/brca/webtool_*.txt` |
+| Pre-rendered figures | `figures/BRCA_downanalysis/` |
 
 Data structure follows 10x Visium format with Ground Truth labels in `Human_breast/metadata.tsv`.
 
-### BRAC Hyperparameters (from `configs/brac_config.yaml`)
+### BRCA Hyperparameters
 
-Identical architecture to DLPFC:
+Identical architecture to DLPFC; all hyperparameters are passed directly in
+the notebook (no configuration file is read):
 
 ```yaml
 # Model architecture
@@ -226,9 +195,10 @@ cluster_method: mclust
 refine_radius: 50
 n_clusters: 7  # auto-detected
 
-# DEG
-deg_group_1: "8"
-deg_group_2: "12"
+# DEG / web-platform export (downstream script run_brca_deg.py)
+case_group: "12"
+ref_group: "14"
+webtool_groups: ["12", "14"]
 
 # Misc
 seed: 100
@@ -242,9 +212,9 @@ label_col_name: "Ground Truth"
 
 **Dataset**: Pancreatic ductal adenocarcinoma (PDAC), patient A, ST1 section.  
 **Modality**: 10x Visium (RNA + H&E image features)  
-**Config file**: `configs/pdac_config.yaml`  
-**Legacy model**: `dcpbst_package/model_827_copy.py`  
-**Notebook**: `notebooks/dcpbst_PDAC.ipynb`
+**Model variant**: `dcpbst_package/model_827_copy.py` (PDAC-specific hyperparameters are passed directly in the notebook)  
+**Notebook**: `notebooks/dcpbst_PDAC.ipynb`  
+**Downstream script**: `downstream_analysis/run_pdac_deg.py` (web-platform export / DEG / heatmap / volcano / GO; shared helpers in `deg_common.py`)
 
 | Property | Value |
 |----------|-------|
@@ -256,12 +226,14 @@ label_col_name: "Ground Truth"
 | label_col | `ground_truth` (loaded from label CSV) |
 | use_ot | `true` — PDAC uses optimal transport alignment |
 | spatial_s_requires_grad | `true` |
+| DEG contrast groups | Cluster `3` vs cluster `4` (66 significant DEGs, Wilcoxon, \|log2FC\| ≥ 2, P < 0.05) |
+| Web-platform export | Domains `3` and `4` (235 spots: 66 + 169), generated by `run_pdac_deg.py` into `downstream_analysis/deg_results/pdac/webtool_*.txt` |
 
 > **Note**: The original notebook used `/data/shijie/dcpbst` as working directory. All paths are now relative to the repo root (`reproducible_experiments/`).
 
-### PDAC-Specific Differences vs. DLPFC/BRAC
+### PDAC-Specific Differences vs. DLPFC/BRCA
 
-| Parameter | DLPFC/BRAC | PDAC |
+| Parameter | DLPFC/BRCA | PDAC |
 |-----------|------------|------|
 | `pca_n_components` | 1000 | **256** |
 | `embed_dim` | 512 | **256** |
@@ -272,7 +244,10 @@ label_col_name: "Ground Truth"
 | `use_ot` | false | **true** |
 | `spatial_s_requires_grad` | false | **true** |
 
-### PDAC Hyperparameters (from `configs/pdac_config.yaml`)
+### PDAC Hyperparameters
+
+PDAC-specific values passed directly in the notebook (no configuration file
+is read):
 
 ```yaml
 # Model architecture (PDAC-specific)
@@ -316,8 +291,7 @@ label_col_name: "Ground Truth"
 
 **Dataset**: Mouse hypothalamus, neuronal subtype identification.  
 **Modality**: MERFISH (RNA + spatial coordinates, **no image features**)  
-**Config file**: `configs/hypothalamus_config.yaml`  
-**Legacy model**: `dcpbst_package/model_829_copy.py`  
+**Model variant**: `dcpbst_package/model_829_copy.py`  
 **Notebook**: `notebooks/dcpbst_Mouse_Hypothalamus.ipynb`
 
 | Property | Value |
@@ -333,7 +307,10 @@ label_col_name: "Ground Truth"
 
 > **Note**: The MERFISH data was originally located at `/data/shijie/dcpbst/data/mouse_Hypothalamus/`. It was copied to the repo's `data/` directory and symlinked back.
 
-### Hypothalamus Hyperparameters (from `configs/hypothalamus_config.yaml`)
+### Hypothalamus Hyperparameters
+
+MERFISH-specific values passed directly in the notebook (no configuration
+file is read):
 
 ```yaml
 # Model architecture (MERFISH-specific)
@@ -376,8 +353,7 @@ label_col_name: "ground_truth"
 
 **Dataset**: Mouse brain anterior region.  
 **Modality**: 10x Visium (RNA + H&E image features)  
-**Config file**: `configs/mouse_arei_config.yaml`  
-**Legacy model**: `dcpbst_package/model_827.py`  
+**Model variant**: `dcpbst_package/model_827.py`  
 **Notebook**: `notebooks/dcpbst_Mouse_AREI.ipynb`
 
 | Property | Value |
@@ -391,9 +367,10 @@ label_col_name: "ground_truth"
 
 Data structure follows 10x Visium format with `spatial/` directory and `full_image.tif`.
 
-### Mouse AREI Hyperparameters (from `configs/mouse_arei_config.yaml`)
+### Mouse AREI Hyperparameters
 
-Identical to DLPFC/BRAC architecture:
+Identical to DLPFC/BRCA architecture; values passed directly in the notebook
+(no configuration file is read):
 
 ```yaml
 # Model architecture
@@ -434,33 +411,60 @@ label_col_name: "Ground Truth"
 
 ## 6. Differential Gene Analysis (Downstream)
 
-DEG analysis code was extracted from the PDAC notebook (`tutorial_osfs_pdac_10 copy.ipynb`, Cells 2/3/5) into a standalone script:
+The notebooks only demonstrate spatial-domain identification. All DEG-related
+tasks were extracted into two standalone driver scripts that share the same
+analysis code in `downstream_analysis/deg_common.py` (no GPU required; they
+consume the clustered h5ad saved by the notebooks):
 
 ```bash
-python downstream_analysis/differential_gene_analysis.py \
-  <path_to_clustered_adata_with_domain_column.h5ad>
+# PDAC: web-platform export (domains 3 and 4) + DEG 3 vs 4
+#       + heatmap + volcano + GO enrichment
+python downstream_analysis/run_pdac_deg.py
+
+# BRCA: web-platform export (domains 12 vs 14) + DEG 12 vs 14
+#       + heatmap + two volcano plots + GO enrichment
+python downstream_analysis/run_brca_deg.py
+
+# Offline / fast runs
+python downstream_analysis/run_pdac_deg.py --skip-go
+python downstream_analysis/run_brca_deg.py --skip-go --skip-webtool
 ```
 
 ### Pipeline Details
 
 | Step | Method | Description |
 |------|--------|-------------|
-| DEG detection | `sc.tl.rank_genes_groups` (Wilcoxon) | Benjamini-Hochberg correction |
-| Compatibility | Custom `get_rank_genes_groups_df_compat` | Handles both `dict` and `recarray` scanpy output formats |
-| Thresholds | `|log2FC| >= 2` and `adj p-value < 0.05` | Standard DEG filtering |
-| Pairwise test | Mann-Whitney U | Cross-cluster pairwise comparison of top 200 genes |
-| Outputs | DEG CSVs, volcano plots, violin plots | Per-cluster results |
+| DEG detection | `sc.tl.rank_genes_groups` (Wilcoxon rank-sum) | Case domain vs reference domain |
+| Compatibility | `get_rank_genes_groups_df_compat` (in `deg_common.py`) | Handles both `dict` and `recarray` scanpy output formats |
+| Thresholds | `|log2FC| >= 2` and `p-value < 0.05` | Significant DEG filtering |
+| Heatmap | seaborn clustermap | Top-10 DEGs (5 up / 5 down), cluster-mean expression, hierarchical gene ordering |
+| Volcano | `-log10(P)` vs log2FC | BRCA additionally provides a reference-perspective volcano |
+| GO enrichment | Hypergeometric test + BH correction | Human GOA annotation; cached once in `deg_results/hsa_go_mapping.csv` and shared by both scripts |
 
 ### Output Files
 
 ```
-deg_results/
-├── DEG_cluster_{id}_all.csv
-├── DEG_cluster_{id}_significant.csv
-├── DEG_all_clusters_all_genes.csv
-├── pairwise_MWU_DEGs_top200genes.csv
-├── rank_genes_groups_top25.png
-└── rank_genes_groups_violin.png
+downstream_analysis/deg_results/
+├── hsa_go_mapping.csv                 # human GO annotation cache (auto-downloaded, shared)
+├── pdac/
+│   ├── DEG_3vs4_all_genes.csv         # 3000 genes tested
+│   ├── DEG_3vs4_significant.csv       # 66 significant DEGs
+│   ├── heatmap_top10_DEGs_3vs4.pdf
+│   ├── volcano_3vs4.pdf
+│   ├── go_enrichment_3vs4_all_results.csv / _significant.csv  # 229 terms
+│   ├── go_bubble_3vs4.pdf
+│   ├── webtool_data_heatmap.txt       # raw genes x spots matrix (3000 x 235)
+│   └── webtool_sample_class.txt       # spot group labels (domains 3 / 4; 66 + 169)
+└── brca/
+    ├── DEG_12vs14_all_genes.csv       # 3000 genes tested
+    ├── DEG_12vs14_significant.csv     # 121 significant DEGs
+    ├── heatmap_top10_DEGs_12vs14.pdf
+    ├── volcano_12vs14.pdf
+    ├── volcano_14based_12vs14.pdf     # reference-perspective volcano
+    ├── go_enrichment_12vs14_all_results.csv / _significant.csv  # 131 terms
+    ├── go_bubble_12vs14.pdf
+    ├── webtool_data_heatmap.txt       # raw genes x spots matrix (3000 x 626)
+    └── webtool_sample_class.txt       # spot group labels (domains 12 / 14; 431 + 195)
 ```
 
 ---
@@ -471,21 +475,29 @@ GO/KEGG enrichment, volcano plots, bubble plots, and differential heatmaps are r
 
 🔗 **Platform URL**: [https://cute-companion-liart.vercel.app](https://cute-companion-liart.vercel.app)
 
-### 7.1 BRAC Pre-Packaged Inputs
+### 7.1 Web-Platform Inputs (BRCA and PDAC)
 
-All BRAC raw input files are pre-packaged in `downstream_analysis/website_inputs/`:
+Each downstream driver exports one raw expression set for the web platform
+(Task 1) into `downstream_analysis/deg_results/<dataset>/` — these are the
+single raw gene-expression exports kept per dataset:
+
+| Dataset | Generator | Groups | Spots | Files |
+|---------|-----------|--------|-------|-------|
+| BRCA | `run_brca_deg.py` | domains `12` vs `14` | 626 (431 + 195) | `deg_results/brca/webtool_*.txt` |
+| PDAC | `run_pdac_deg.py` | domains `3` and `4` | 235 (66 + 169) | `deg_results/pdac/webtool_*.txt` |
 
 | File | Dimensions | Purpose |
 |------|------------|---------|
-| `BRAC_heatmap_all_genes_3000.txt` | 3001 × 480 | Full HVG heatmap (Expression Matrix) |
-| `BRAC_heatmap_filtered_genes_3000.txt` | 3001 × 480 | Filtered/reordered HVG heatmap |
-| `BRAC_heatmap_significant_genes_299.txt` | 300 × 480 | Significant DEG heatmap + GO background genes |
-| `BRAC_heatmap_top100_genes.txt` | 101 × 480 | Top-100 DEG preview heatmap |
-| `BRAC_sample_class_479.txt` | 480 × 2 | Sample annotations (Group 8 / Group 12) |
+| `webtool_data_heatmap.txt` | 3000 genes × N spots (tab-separated) | Raw expression matrix (Expression Matrix input) |
+| `webtool_sample_class.txt` | N spots × 2 columns | Spot group annotations (domain labels) |
 
-### 7.2 BRAC Pre-Rendered Figures
+Regenerate at any time with `python downstream_analysis/run_brca_deg.py` or
+`run_pdac_deg.py` (skip the other tasks with `--skip-go` if only the export
+is needed).
 
-Located at `figures/BRAC_downanalysis/`:
+### 7.2 BRCA Pre-Rendered Figures
+
+Located at `figures/BRCA_downanalysis/`:
 
 - `go.bf196e554962720c/` — GO three ontologies (BP, MF, CC)
   - `{BP,MF,CC}_{goplot,Enrichment_Score_barplot,dotplot,emap,cnetplot}.{png,pdf,tiff}`
@@ -499,26 +511,35 @@ Located at `figures/BRAC_downanalysis/`:
 
 ### 7.3 PDAC Enrichment Regeneration
 
-PDAC GO/KEGG files and pre-rendered figures are **not available** (lost during archival). To reproduce:
+PDAC DEG/GO results are reproduced end-to-end by the downstream driver script
+(no web platform required for GO — the hypergeometric enrichment is built in):
 
 ```bash
-# Step 1: Run PDAC notebook
-jupyter nbconvert --execute --to html notebooks/dcpbst_PDAC.ipynb
-# → produces clustered h5ad
+# Step 1: Run the PDAC notebook (spatial-domain identification)
+jupyter notebook notebooks/dcpbst_PDAC.ipynb
+# → trains the model and saves saved_results/dcpbst_PDAC_adata_with_clusters.h5ad
+#   (plus dcpbst_PDAC_model.pth and dcpbst_PDAC_clustering_metrics.csv)
 
-# Step 2: Generate DEG CSV
-python downstream_analysis/differential_gene_analysis.py ./saved_results1/dcpbst_adata_with_clusters.h5ad
-# → generates deg_results/DEG_cluster_<id>_significant.csv
+# Step 2: Run the PDAC downstream pipeline
+python downstream_analysis/run_pdac_deg.py
+# → deg_results/pdac/ : webtool_*.txt export (domains 3 and 4, 235 spots),
+#   DEG tables (66 significant DEGs, 3 vs 4), heatmap + volcano PDFs,
+#   GO enrichment (229 terms) + bubble plot
 
-# Step 3: Upload to web platform
-# - Volcano plot: CSV with logfoldchanges vs -log10(pvals_adj)
-# - GO enrichment: gene symbols from significant DEGs
-# - Heatmap: top-299 DEG × sample matrix + group annotations
+# Step 3 (optional): upload DEG CSVs to the web platform
+# - Volcano plot: CSV with logfoldchanges vs -log10(pvals)
+# - GO/KEGG: gene symbols from DEG_3vs4_significant.csv
 ```
 
-### 7.4 BRAC vs PDAC Notebook Note
+### 7.4 Downstream-Code Note
 
-The file `notebooks/dcpbst_BRAC_GO_enrichment_and_violin.ipynb` was sourced from `tutorial_dlpfc_brca_go_svg.ipynb`. A separate file `tutorial_dlpfc_pdac_go_svg.ipynb` exists but internally loads `data/Human_breast` (BRAC data) — the "pdac" naming is a historical artifact. Use `differential_gene_analysis.py` for PDAC DEG export instead.
+The notebooks deliberately contain **no** DEG/GO cells — they only demonstrate
+spatial-domain identification. All downstream tasks (DEG tables, heatmaps,
+volcano plots, GO enrichment, web-platform export) live in the two driver
+scripts `downstream_analysis/run_brca_deg.py` and
+`downstream_analysis/run_pdac_deg.py`, which share their analysis code in
+`downstream_analysis/deg_common.py`. Pre-rendered BRCA GO/KEGG figures from
+the web platform are archived in `figures/BRCA_downanalysis/`.
 
 ---
 
@@ -530,7 +551,7 @@ All paths in the repository are **relative to the repo root** (`reproducible_exp
 
 | Notebook | Original `os.chdir()` | Reproduction |
 |----------|----------------------|--------------|
-| DLPFC 151509 / 151671 / BRAC | `/data/dcpbst` | No change needed |
+| DLPFC 151509 / 151671 / BRCA | `/data/dcpbst` | No change needed |
 | PDAC / xiaqiu / AREI | `/data/shijie/dcpbst` | **Changed to `/data/dcpbst`** |
 
 ### Quick Path Fix Script
@@ -555,37 +576,41 @@ done
 reproducible_experiments/
 ├── data/
 │   ├── 151507 … 151676/          # 12 DLPFC Visium sections
-│   ├── Human_breast/             # BRAC (10x Visium)
+│   ├── Human_breast/             # BRCA (10x Visium)
 │   ├── PDAC3036911/              # PDAC (h5ad + label CSV + HE image)
 │   ├── mouse_Hypothalamus/       # MERFISH .h5ad files
 │   ├── Mouse_Brain_Anterior/     # Mouse AREI / Brain Anterior (10x Visium)
 │   ├── cut_img_DLPFC/            # Pre-computed DLPFC image patches/features
-│   └── cut_img_BRCA/             # Pre-computed BRAC/AREI image patches/features
-├── configs/                      # Per-dataset YAML configurations
-├── dcpbst_package/                 # Core DCPBST package
-├── notebooks/                    # Jupyter notebooks
-├── downstream_analysis/          # Standalone scripts
+│   └── cut_img_BRCA/             # Pre-computed BRCA/AREI image patches/features
+├── dcpbst_package/               # Core DCPBST package (all model variants)
+├── notebooks/                    # Jupyter notebooks (spatial-domain identification)
+├── ablation/                     # Ablation study scripts (BRCA only)
+├── downstream_analysis/          # DEG / GO driver scripts + deg_common.py
 ├── figures/                      # Pre-rendered figures
-└── legacy_models/                # Archived model files
+└── saved_results/                # Notebook outputs (generated locally; not shipped)
 ```
 
 ---
 
-## 9. Per-Dataset Config Files Reference
+## 9. Per-Dataset Parameter Reference
 
-### Config File Summary
+> All hyperparameters below are passed directly in code (notebook cells /
+> model variant defaults). The repository contains **no configuration files
+> or YAML loader** — each notebook is self-contained.
 
-| Config File | Dataset | Modality | Model Variant (Legacy) | Key Differences from Default |
-|-------------|---------|----------|----------------------|------------------------------|
-| `configs/dlpfc_config.yaml` | DLPFC (10x Visium) | RNA + H&E | `model_827.py` | Baseline configuration |
-| `configs/brac_config.yaml` | BRAC (10x Visium) | RNA + H&E | `model_827.py` | Same as DLPFC + DEG groups 8 vs 12 |
-| `configs/pdac_config.yaml` | PDAC (10x Visium) | RNA + H&E | `model_827_copy.py` | `embed_dim=256`, `num_heads=16`, `use_ot=true`, higher `w_kl`/`w_pro` |
-| `configs/hypothalamus_config.yaml` | Mouse Hypothalamus (MERFISH) | RNA + coords | `model_829_copy.py` | `use_img_features=false`, `neighbors=6`, `pca_n_components=256` |
-| `configs/mouse_arei_config.yaml` | Mouse AREI (10x Visium) | RNA + H&E | `model_827.py` | Same as DLPFC |
+### Model Variant Summary
+
+| Dataset | Modality | Model Variant | Key Differences |
+|---------|----------|---------------|-----------------|
+| DLPFC (10x Visium) | RNA + H&E | `model_827.py` | Baseline configuration |
+| BRCA (10x Visium) | RNA + H&E | `model_827_copy.py` | Same architecture as DLPFC; web export domains 12 vs 14, DEG 12 vs 14 |
+| PDAC (10x Visium) | RNA + H&E | `model_827_copy.py` | `embed_dim=256`, `num_heads=16`, `use_ot=true`, higher `w_kl`/`w_pro` |
+| Mouse Hypothalamus (MERFISH) | RNA + coords | `model_829_copy.py` | `use_img_features=false`, `neighbors=6`, `pca_n_components=256` |
+| Mouse AREI (10x Visium) | RNA + H&E | `model_827.py` | Same as DLPFC |
 
 ### Architecture Parameters by Dataset
 
-| Parameter | DLPFC / BRAC / AREI | PDAC | Hypothalamus |
+| Parameter | DLPFC / BRCA / AREI | PDAC | Hypothalamus |
 |-----------|--------------------|------|--------------|
 | `latent_dim` | 1024 | 1024 | 1024 |
 | `pca_n_components` | 1000 | 256 | 256 |
@@ -600,7 +625,7 @@ reproducible_experiments/
 
 ### Loss Weights by Dataset
 
-| Loss | DLPFC / BRAC / AREI | PDAC | Hypothalamus (MERFISH) |
+| Loss | DLPFC / BRCA / AREI | PDAC | Hypothalamus (MERFISH) |
 |------|--------------------|------|------------------------|
 | `w_cls` | 10.0 | 10.0 | 10.0 |
 | `w_recon` | 10.0 | 10.0 | 10.0 |
@@ -614,15 +639,18 @@ All datasets use `epochs=900`, `lr=0.001`, `seed=100`.
 
 ### Notebook-to-Dataset Mapping
 
-| Notebook | Config File | Data Path | Legacy Model |
-|----------|------------|-----------|--------------|
-| `notebooks/dcpbst_DLPFC_151509.ipynb` | `configs/dlpfc_config.yaml` | `data/151509` | `model_827.py` |
-| `notebooks/dcpbst_DLPFC_151671.ipynb` | `configs/dlpfc_config.yaml` | `data/151671` | `model_827.py` |
-| `notebooks/dcpbst_BRAC.ipynb` | `configs/brac_config.yaml` | `data/Human_breast` | `model_827.py` |
-| `notebooks/dcpbst_BRAC_GO_enrichment_and_violin.ipynb` | *(downstream)* | `data/Human_breast` | *(post-analysis)* |
-| `notebooks/dcpbst_PDAC.ipynb` | `configs/pdac_config.yaml` | `data/PDAC3036911` | `model_827_copy.py` |
-| `notebooks/dcpbst_Mouse_Hypothalamus.ipynb` | `configs/hypothalamus_config.yaml` | `data/mouse_Hypothalamus` | `model_829_copy.py` |
-| `notebooks/dcpbst_Mouse_AREI.ipynb` | `configs/mouse_arei_config.yaml` | `data/Mouse_Brain_Anterior` | `model_827.py` |
+| Notebook | Data Path | Model Variant |
+|----------|-----------|---------------|
+| `notebooks/dcpbst_DLPFC_151509.ipynb` | `data/151509` | `model_827.py` |
+| `notebooks/dcpbst_DLPFC_151671.ipynb` | `data/151671` | `model_827.py` |
+| `notebooks/dcpbst_BRAC.ipynb` (filename kept as-is) | `data/Human_breast` | `model_827_copy.py` |
+| `notebooks/dcpbst_PDAC.ipynb` | `data/PDAC3036911` | `model_827_copy.py` |
+| `notebooks/dcpbst_Mouse_Hypothalamus.ipynb` | `data/mouse_Hypothalamus` | `model_829_copy.py` |
+| `notebooks/dcpbst_Mouse_AREI.ipynb` | `data/Mouse_Brain_Anterior` | `model_827.py` |
+
+> Downstream (DEG / GO) tasks are not in the notebooks — they are reproduced
+> by `downstream_analysis/run_brca_deg.py` and
+> `downstream_analysis/run_pdac_deg.py` (shared code in `deg_common.py`).
 
 ---
 

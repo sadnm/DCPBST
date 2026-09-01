@@ -1,17 +1,14 @@
 """
 DCPBST: Multi-modal Integration for Spatial Omics.
 
-Core package providing the unified DCPBST model, legacy model variants,
-and configuration utilities for reproducible spatial omics experiments.
+Core package providing the DCPBST model variants used by the reproducibility
+notebooks and scripts. Each dataset imports the variant it was developed with:
+
+  - model_827.py        : DLPFC (151509 / 151671) and Mouse AREI
+  - model_827_copy.py   : BRCA and PDAC (PDAC passes its own hyperparameters)
+  - model_829_copy.py   : Mouse Hypothalamus (MERFISH)
 """
 
-try:
-    from .model import Dcpbst
-except ImportError:
-    pass
-
-# Import legacy model variants for backward compatibility
-# They accept slightly different hyperparameters per dataset
 try:
     from .model_827 import Dcpbst as Dcpbst_827
 except ImportError:
@@ -24,11 +21,5 @@ except ImportError:
 
 try:
     from .model_829_copy import Dcpbst as Dcpbst_829_Copy
-except ImportError:
-    pass
-
-# Import configuration utilities
-try:
-    from .config_loader import load_config, create_model_from_config, get_available_configs
 except ImportError:
     pass

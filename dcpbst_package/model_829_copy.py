@@ -1,8 +1,8 @@
-from nets import *
+from .nets import *
 import torch
 from torch import nn, optim
 from torch.utils.data import TensorDataset, DataLoader
-from utils import calculate_affinity
+from .utils import calculate_affinity
 import numpy as np
 import pandas as pd
 from numpy.linalg import svd
@@ -24,7 +24,7 @@ from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bo
 import pandas as pd
 import ot
 import scipy.sparse as sp
-from preprocess import *
+from .preprocess import *
 from torch.nn import MSELoss
 from typing import Callable, Tuple
 from torch_geometric.nn.inits import reset, uniform
@@ -1120,15 +1120,7 @@ class Dcpbst(nn.Module):
                 total_loss.backward()
                 optimizer.step()
                 if (epoch + 1) % 10 == 0:
-                    print(f'\nEpoch {epoch+1}/{epochs} | '
-                        f'Total Loss: {total_loss.item():.4f} | '
-                        f'Recon: {recon_loss.item():.4f} | '
-                        f'KL: {kl_loss.item():.4f} | '
-                        f'InfoNCE: {info_nce_loss.item():.4f} | '
-                        f'DGI: {dgi_loss.item():.4f}|'
-                        f'Proxy: {proxy_loss.item():.4f}|'
-                        f'Classfity: {loss_classification.item():.4f}'
-                         )
+                    print(f'\nEpoch {epoch + 1}/{epochs} | Total Loss: {total_loss.item():.4f}')
                 if (epoch + 1) % diagnose_every_n_epochs == 0 and epoch > 0:
                     print(f"\n--- Running Diagnose & Re-learn at epoch {epoch+1} ---")
                     
@@ -1162,13 +1154,7 @@ class Dcpbst(nn.Module):
                 total_loss.backward()
                 optimizer.step()
                 if (epoch + 1) % 10 == 0:
-                    print(f'\nEpoch {epoch+1}/{epochs} | '
-                        f'Total Loss: {total_loss.item():.4f} | '
-                        f'Recon: {recon_loss.item():.4f} | '
-                        f'KL: {kl_loss.item():.4f} | '
-                        f'InfoNCE: {info_nce_loss.item():.4f} | '
-                        f'DGI: {dgi_loss.item():.4f}|'
-                        f'Cluster: {clustering_loss.item():.4f}')
+                    print(f'\nEpoch {epoch + 1}/{epochs} | Total Loss: {total_loss.item():.4f}')
                 if (epoch + 1) % diagnose_every_n_epochs == 0 and epoch > 0:
                     print(f"\n--- Running Diagnose & Re-learn at epoch {epoch+1} ---")
                     
